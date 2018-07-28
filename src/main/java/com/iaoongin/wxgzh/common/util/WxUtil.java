@@ -1,6 +1,8 @@
 package com.iaoongin.wxgzh.common.util;
 
 import com.alibaba.fastjson.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author XHX
@@ -8,13 +10,15 @@ import com.alibaba.fastjson.JSONObject;
  */
 public class WxUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(WxUtil.class);
+
     //获取token
     public static String getAccessToken(){
 
         String url=WXProperties.getInstance().getProperty("access_tokenUrl");
         String APPID=WXProperties.getInstance().getProperty("AppID");
-        String SECRET=WXProperties.getInstance().getProperty("AppSecret");
-        url=url.replace("APPID", APPID).replace("APPSECRET", SECRET);
+        String APPSECRET=WXProperties.getInstance().getProperty("AppSecret");
+        url=url.replace("APPID", APPID).replace("APPSECRET", APPSECRET);
         JSONObject json;
         String access_token="";
         try {
@@ -33,8 +37,8 @@ public class WxUtil {
     public static JSONObject getAccess_token(String code) throws Exception{
         String url=WXProperties.getInstance().getProperty("codeAccess_tokenUrl");
         String APPID=WXProperties.getInstance().getProperty("AppID");
-        String SECRET=WXProperties.getInstance().getProperty("AppSecret");
-        url=url.replace("APPID", APPID).replace("SECRET", SECRET).replace("CODE", code);
+        String APPSECRET=WXProperties.getInstance().getProperty("AppSecret");
+        url=url.replace("APPID", APPID).replace("APPSECRET", APPSECRET).replace("CODE", code);
         return HttpsRequest.httpsRequest(url, "GET", null);
     }
 
