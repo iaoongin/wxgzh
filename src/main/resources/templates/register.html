@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+
+</head>
+<body>
+
+<form action="/weixin/auth/register">
+    电话<input name="telPhone" type="text">
+    密码<input name="password" type="password">
+    验证码<input type="text" name="code"><img id="capCode" src="/capCode"/>
+    <button onclick="getCapCode();return false;">验证码</button>
+    <input type="submit" value="确认">
+</form>
+<hr>
+<form action="/weixin/pay">
+    金额<input name="amount" type="number">
+    <input type="submit" value="支付">
+</form>
+
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    function getCapCode() {
+        $('#capCode').attr('src', '/capCode?' + new Date().getTime())
+        return false;
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>JSSDK</title>
+    <link rel="stylesheet" href="css/weui.min.css">
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.2.0.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/CONFIG.js"></script>
+    <style>
+    </style>
+</head>
+<body>
+<button class="weui-btn weui-btn_warn" onclick="ABC.getLocation()">获取定位</button>
+<button class="weui-btn weui-btn_primary" onclick="ABC.chooseImage()">拍照</button>
+<button class="weui-btn weui-btn_primary" onclick="ABC.uploadAllImage()">上传图片</button>
+<button class="weui-btn weui-btn_primary" onclick="wx.startRecord();">WX开启录音</button>
+<button class="weui-btn weui-btn_primary" onclick="ABC.stopRecord()">WX结束录音</button>
+<button class="weui-btn weui-btn_primary" onclick="ABC.startH5Record()">H5开启录音</button>
+<div id="location"></div>
+<div id="images"></div>
+
+<script type="text/javascript" src="https://res.wx.qq.com/open/libs/weuijs/1.1.4/weui.min.js"></script>
+<script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp"></script>
+<script>
+
+    $(function () {
+        wx.ready(function () {
+            console.log("ready...");
+        });
+    });
+
+    var ABC = {
+        imgServerIds: [],
+        getLocation: function () {
+            wx.getLocation({
+                type: 'gcj02', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+                success: function (res) {
+                    console.log(res)
+                    var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                    var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                    console.log('latitude:' + latitude, 'longitude:' + longitude);
+
+                    $('#location').html('');
+                    var geocoder = new qq.maps.Geocoder({
+                        complete: function (result) {
+                            $('#location').html('地址： ' + result.detail.address)
+                        }
+                    });
+                    var coord = new qq.maps.LatLng(latitude, longitude);
+                    geocoder.getAddress(coord);
+
+                }
+            });
+        },
+        chooseImage: function () {
+            ABC.imgServerIds = [];
+            wx.chooseImage({
+                count: 2, // 默认9
+                sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+                sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+                success: function (res) {
+                    var localIds = res.localIds; // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+                    $('#images').html('');
+
+                    $.each(localIds, function (key, value) {
+                        $('#images').append("<img src='" + value + "' width='50%' onclick='ABC.previewImage()'>");
+                    });
+
+                    ABC.syncUpload(localIds);
+                }
+            });
+        },
+        syncUpload: function (localIds) {
+            var localId = localIds.pop();
+            wx.uploadImage({
+                localId: localId,
+                isShowProgressTips: 0,
+                success: function (res) {
+                    var serverId = res.serverId; // 返回图片的服务器端ID //其他对serverId做处理的代码 if(localIds.length > 0){ syncUpload(localIds); } } }); };
+                    //其他对serverId做处理的代码
+                    ABC.imgServerIds.push(serverId);
+                    if (localIds.length > 0) {
+                        ABC.syncUpload(localIds);
+                    } else {
+                        // alert(ABC.imgServerIds.length)
+                    }
+                }
+            });
+
+            /* new Promise(function (resolve) {
+                 resolve();
+             }).then(() => {
+                 $.each(localIds, function (key, value) {
+                     $('#images').append("<img src='" + value + "' width='50%' onclick='ABC.previewImage()'>");
+                     // ABC.imgServerIds.push(value);
+                     //异步操作
+                     wx.uploadImage({
+                         localId: value, // 需要上传的图片的本地ID，由chooseImage接口获得
+                         isShowProgressTips: 1, // 默认为1，显示进度提示
+                         success: function (res) {
+                             var serverId = res.serverId; // 返回图片的服务器端ID
+                             ABC.imgServerIds.push(serverId);
+                             alert(serverId)
+                         }
+                     });
+
+                 })
+             }).then(() => {
+                 alert(ABC.imgServerIds.length);
+                 // console.log("All Promise finished");
+
+             });*/
+
+        },
+        uploadAllImage: function () {
+            $.ajax({
+                type: "post",
+                url: '/wxgzh/uploadFile',
+                data: {
+                    'mediaId': ABC.imgServerIds,
+                    'suffix': 'png'
+                },
+                success: function (resp) {
+                    alert(resp)
+                }
+            });
+
+        },
+        previewImage: function () {
+            alert('previewImage...')
+            wx.previewImage({
+                current: 'www.baidu.com/img/bd_logo1.png', // 当前显示图片的http链接
+                urls: ['www.baidu.com/img/bd_logo1.png'] // 需要预览的图片http链接列表
+            });
+            /*wx.previewImage({
+                current: $(this).attr('src'), // 当前显示图片的http链接
+                urls: [] // 需要预览的图片http链接列表
+            });*/
+        },
+        stopRecord: function () {
+            alert('stopRecord');
+            wx.stopRecord({
+                success: function (res) {
+                    var localId = res.localId;
+                    wx.uploadVoice({
+                        localId: localId, // 需要上传的音频的本地ID，由stopRecord接口获得
+                        isShowProgressTips: 1, // 默认为1，显示进度提示
+                        success: function (res) {
+                            var serverId = res.serverId; // 返回音频的服务器端ID
+                            $.post('/wxgzh/uploadFile', {
+                                mediaId: [serverId],
+                                suffix: 'mp3'
+                            }, function (resp) {
+                                alert(resp);
+                            });
+                            console.log(serverId);
+                        }
+                    });
+                }
+            });
+        },
+        startH5Record: function () {
+            try {
+
+                // start();
+            } catch (e) {
+                alert(e)
+            }
+        }
+    }
+
+    function start() {
+        /*navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        }).then(gotStream).catch(logError);*/
+        navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true
+        }).then(gotStream).catch(logError);
+        // startBtn.disabled = true;
+    }
+
+    function gotStream(stream) {
+        alert(stream)
+        stream.getTracks().forEach(function (track) {
+            track.onended = function () {
+                // startBtn.disabled = stream.active;
+            };
+        });
+    }
+
+    function logError(error) {
+        alert(error)
+        console.log(error.name + ": " + error.message);
+    }
+
+</script>
+
+</body>
+</html>
